@@ -1,4 +1,4 @@
-import React, {useState, useEffect, Fragment} from 'react'
+import {useState, useEffect, Fragment} from 'react'
 import { prueba_request } from '../services/moods'
 import '../App.css'
 
@@ -8,9 +8,9 @@ import ColorPicker from '../components/ui/color-picker'
 import {
   Table,
   TableBody,
-  TableCaption,
+
   TableCell,
-  TableFooter,
+ 
   TableHead,
   TableHeader,
   TableRow,

@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect, useMemo } from "react";
 import Matrix from "../matrix";
-
-
+import AddMood from "@/components/add-mood";
+import { Button } from "@/components/ui/button";
 
 //simula data obtenida de una api
 
@@ -21,9 +21,14 @@ const multiFill = (matrix, mockData) => {
   mockData.map(({date, color}) => {
     const [, x, y] = date.split('-')
     matrix.fill({x: Number(x), y: Number(y) +1}, {color})
-    console.log(x, y)
   })
   return matrix.print()
+}
+
+function cantDays(year, month) {
+  month--;
+  const monthDay = new Date(year, month + 1, 0);
+  return monthDay.getDate();
 }
 
 
@@ -32,31 +37,32 @@ function Calendary() {
   const initialMatrix = useMemo(() => new Matrix({ x: 12, y: 32 }), [] ) 
 
   const [matrix, setMatrix] = useState([]);
+  const [row, setRow] = useState({indexX: 0, indexY: 0, axisX: null});
+  const [open, setOpen] = useState(false)
+ 
+  const getData = useCallback(async () => {
+    //fake api call
+    const data_api = mockData
+    const body = multiFill(initialMatrix, data_api)
+    setMatrix(body);
+  }, [initialMatrix])
 
   useEffect(() => {
+    //simula el fetch de la api al montar el componente
+    getData()
+  
+  }, [getData, initialMatrix]) 
 
-    const body = multiFill(initialMatrix, mockData)
-    setMatrix(body);
-  }, [initialMatrix]) 
 
-  function cantDays(year, month) {
-    month--;
-    const monthDay = new Date(year, month + 1, 0);
-    return monthDay.getDate();
-  }
-  const onClick = useCallback(
-    (indexX, indexY) => {
-      console.log(indexX+1, indexY + 1)
-      const newMatrix = new Matrix()
-        .create(matrix)
-        .fill({ x: indexX + 1, y: indexY + 1 }, { color: "#09f09f" });
-      const body = newMatrix.print();
-      setMatrix(body);
-      //get real date 
-      const date = new Date(2024, indexX, indexY).toISOString().slice(0, 10);
-      console.log(date);
+  const addMood = useCallback(
+    async (data) => {
+      //simula cargar a la base de datos
+      mockData.push(data)
+      // finally actualiza el calendario y cierra el modal
+      getData()
+      setOpen(false)
     },
-    [matrix]
+    [getData]
   );
 
   const CalendaryCell = useCallback(
@@ -75,14 +81,20 @@ function Calendary() {
           );
         } else {
           return cantDays(2024, indexX + 1) >= indexY ? (
-            <p
-              key={`cell-${indexX}-${indexY}`}
-              onClick={() => onClick(indexX, indexY)}
-              className="w-9 h-9 border"
-              style={{ backgroundColor: axisX?.color }}
-            >
+            <Button
+            key={`cell-${indexX}-${indexY}`}
+            disabled={typeof axisX === "object"}
+            className="w-9 h-9 border rounded-none"
+            variant={"outline"}
+            onClick={() => {
               
-            </p>
+             setOpen(true)
+           
+              setRow({indexX, indexY, axisX})}
+            }
+            style={{ backgroundColor: axisX?.color }}
+            />
+           
           ) : (
             <p
               key={`empty-${indexX}-${indexY}`}
@@ -91,7 +103,7 @@ function Calendary() {
           );
         }
       }),
-    [onClick]
+    []
   );
 
   const CalendaryMap = useCallback(
@@ -100,7 +112,7 @@ function Calendary() {
         return (
           <div key={`row-${indexY}`} className="flex flex-row">
             <p className="w-9 h-9 border text-center flex justify-center items-center">
-              {indexY}
+              {indexY !== 0 && indexY}
             </p>
             <div className="flex flex-row">
               <CalendaryCell axisY={axisY} indexY={indexY} />
@@ -113,8 +125,9 @@ function Calendary() {
 
   return (
     <>
-      <div className="flex flex-col">
+      <div className="flex flex-1 flex-col">
         <CalendaryMap />
+       <AddMood  axisX={row.axisX} indexX={row.indexX} indexY={row.indexY} addMood={addMood} open={open} setOpen={setOpen}/>
       </div>
     </>
   );

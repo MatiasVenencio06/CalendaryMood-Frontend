@@ -1,11 +1,10 @@
 import EmotionsList from './views/EmotionsList'
 import Calendary from './views/Calendary'
-import { useState } from 'react'
 
 function App() {
 
   return (
-    <div className='flex flex-row'>
+    <div className='md:grid md:grid-cols-2 gap-10 flex-1 justify-center items-start m-auto flex flex-col'>
       <Calendary/>
       <EmotionsList/>
     </div>
