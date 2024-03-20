@@ -2,19 +2,8 @@ import { useCallback, useState, useEffect, useMemo } from "react";
 import Matrix from "../matrix";
 import AddMood from "@/components/add-mood";
 import { Button } from "@/components/ui/button";
-
-//simula data obtenida de una api
-
-const mockData = [
-  {date: "2024-01-01",
-  color: "#09f09f",},
-  {date: "2024-01-02",
-  color: "#09f09f",},
-  {date: "2024-01-03",
-  color: "#09f09f",},
-  {date: "2024-01-04",
-  color: "#09f09f",},
-]
+import { add_mood, resume_mood } from "@/services/moods";
+import { useToast } from "@/components/ui/use-toast";
 
 const multiFill = (matrix, mockData) => {
   matrix.solid()
@@ -31,39 +20,62 @@ function cantDays(year, month) {
   return monthDay.getDate();
 }
 
-
-
 function Calendary() {
   const initialMatrix = useMemo(() => new Matrix({ x: 12, y: 32 }), [] ) 
 
   const [matrix, setMatrix] = useState([]);
   const [row, setRow] = useState({indexX: 0, indexY: 0, axisX: null});
   const [open, setOpen] = useState(false)
+  const [selectedDate, setSelectedDate] = useState(null)
+  const [todayDate, setTodayDate] = useState()
+  const [cellClicked, setCellClicked] = useState(false)
+  const [dateOnClick, setDateOnClick] = useState()
  
+  const { toast } = useToast()
+
   const getData = useCallback(async () => {
-    //fake api call
-    const data_api = mockData
-    const body = multiFill(initialMatrix, data_api)
+    const data_api = await resume_mood()
+    const body = multiFill(initialMatrix, data_api.data)
     setMatrix(body);
   }, [initialMatrix])
+  
+  useEffect(() => {
+    getData()
+    setTodayDate(new Date().toISOString().slice(0, 10))
+  }, [getData, initialMatrix]) 
+  
+  useEffect(() => {
+    setSelectedDate(new Date(2024, row.indexX, row.indexY).toISOString().slice(0, 10))
+  }, [row])
 
   useEffect(() => {
-    //simula el fetch de la api al montar el componente
-    getData()
-  
-  }, [getData, initialMatrix]) 
-
+    if (cellClicked) { 
+      setDateOnClick(selectedDate === todayDate ? 
+        setOpen(true) :
+        toast({
+          variant: "destructive",
+          title: "Ups!!, Algo salio mal",
+          description: "Asegúrate de seleccionar solo la fecha del día de hoy",
+        }))
+      }
+  }, [selectedDate])
 
   const addMood = useCallback(
     async (data) => {
-      //simula cargar a la base de datos
-      mockData.push(data)
-      // finally actualiza el calendario y cierra el modal
+      try {
+        add_mood(data)
+      } catch {
+
+      }
       getData()
       setOpen(false)
     },
     [getData]
   );
+
+  const openDetail = () => {
+    return alert('detalle')
+  }
 
   const CalendaryCell = useCallback(
     ({ axisY, indexY }) =>
@@ -83,15 +95,15 @@ function Calendary() {
           return cantDays(2024, indexX + 1) >= indexY ? (
             <Button
             key={`cell-${indexX}-${indexY}`}
-            disabled={typeof axisX === "object"}
             className="w-9 h-9 border rounded-none"
             variant={"outline"}
             onClick={() => {
-              
-             setOpen(true)
-           
-              setRow({indexX, indexY, axisX})}
-            }
+              if (typeof axisX === 'object') {
+                openDetail()
+              } else {
+                setCellClicked(true), dateOnClick, setRow({indexX, indexY, axisX})
+              }
+            }}
             style={{ backgroundColor: axisX?.color }}
             />
            
